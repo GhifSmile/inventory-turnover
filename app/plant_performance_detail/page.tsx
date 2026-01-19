@@ -132,15 +132,15 @@ export default async function PerformanceDetailPage({
                       colorClass = "text-yellow-600";
                     } else if (2.5 <= ytd && ytd <= 4) {
                       statusEmoji = "🟢";
-                      actionText = "-";
+                      actionText = "Optimal Stock";
                       colorClass = "text-green-600";                      
                     } else if (2 <= ytd && ytd <= 2.4) {
                       statusEmoji = "🟡";
-                      actionText = "Important to Note";
+                      actionText = "Capital Risk (Overstock)";
                       colorClass = "text-yellow-600";
                     } else if (ytd < 2) {
                       statusEmoji = "🔴";
-                      actionText = "Capital Risk";
+                      actionText = "Important to Note (Capital Lock)";
                       colorClass = "text-red-500";                      
                     }
 
@@ -177,7 +177,7 @@ export default async function PerformanceDetailPage({
                         <td className="px-4 py-3 text-center text-lg leading-none border-r border-slate-100">
                           {statusEmoji}
                         </td>
-                        <td className={`px-4 py-3 italic whitespace-nowrap ${vsT >= 0 ? 'text-slate-300' : 'font-medium ' + colorClass}`}>
+                        <td className={`px-4 py-3 italic whitespace-nowrap ${vsT >= 0 ? 'text-green-600' : 'font-medium ' + colorClass}`}>
                           {actionText}
                         </td>
                       </tr>
