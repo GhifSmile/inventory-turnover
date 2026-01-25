@@ -83,6 +83,14 @@ export interface PlantComparisonData {
   shrimpTurnover: number;
 }
 
+export interface PlantSubmissionStatus {
+  plant: string;
+  completedMonths: number;
+  percentage: number;
+  details: { month: number; isFilled: boolean }[];
+}
+
+
 // Helper
 const monthNames = [
   "January", "February", "March", "April", "May", "June",
@@ -159,6 +167,70 @@ function calculateDOIByUnit(data: RawDataRow[], businessUnitFilter: string | nul
 
 export const InventoryTurnoverService ={
 
+  getSubmissionStatus: async (filters: TurnoverFilters): Promise<PlantSubmissionStatus[]> => {
+    try {
+      let targetMonth: number;
+
+      const plantData = await db.execute(sql`
+          SELECT DISTINCT plant FROM inventory_turnover
+          ORDER BY plant ASC
+      `) as unknown as { plant: string }[]; 
+
+      const defaultPlants = plantData.map((r) => r.plant);
+
+      const activePlants: string[] = filters.plants && filters.plants.length > 0 
+        ? filters.plants 
+        : defaultPlants;
+
+      if (filters.months && filters.months.length > 0) {
+        targetMonth = Math.max(...filters.months);
+      } else {
+        const maxMonthResult = await db.execute(sql`
+          SELECT MAX(month) as max_month
+          FROM inventory_turnover
+          WHERE year = ${filters.year}
+        `);
+        targetMonth = (maxMonthResult as any)[0]?.max_month || (new Date().getMonth() + 1);
+      }
+
+      const plantClause = filters.plants && filters.plants.length > 0 
+        ? sql`AND plant IN (${sql.join(filters.plants, sql`, `)})` 
+        : sql``;
+
+      // Hanya ambil data untuk targetMonth yang ditentukan
+      const result = await db.execute(sql`
+        SELECT DISTINCT plant
+        FROM inventory_turnover
+        WHERE year = ${filters.year} 
+          AND month = ${targetMonth}
+          ${plantClause}
+      `);
+
+      const rows = result as unknown as { plant: string }[];
+
+      return activePlants.map(plantName => {
+        // Cek apakah ada record untuk plant ini di bulan tersebut
+        const isFilled = rows.some(r => r.plant?.toUpperCase() === plantName.toUpperCase());
+
+        const details = [{
+          month: targetMonth,
+          isFilled: isFilled
+        }];
+
+        return {
+          plant: plantName,
+          completedMonths: isFilled ? 1 : 0,
+          percentage: isFilled ? 100 : 0,
+          details: details
+        };
+      });
+
+    } catch (error) {
+      console.error("Error in getSubmissionStatus:", error);
+      return [];
+    }
+  },  
+
   getFilterOptions: async () => {
     const result = await db.execute(sql`
       SELECT DISTINCT year FROM inventory_turnover 
@@ -182,6 +254,22 @@ export const InventoryTurnoverService ={
       months: monthNames.map((name, i) => ({ id: i + 1, name }))
     };
   },    
+
+  getLatestMonthAvailable: async (year: number): Promise<number | null> => {
+    try {
+      const result = await db.execute(sql`
+        SELECT MAX(month) as max_month 
+        FROM inventory_turnover 
+        WHERE year = ${year}
+      `);
+      
+      const maxMonth = (result as any)[0]?.max_month;
+      return maxMonth ? Number(maxMonth) : null;
+    } catch (error) {
+      console.error("Error fetching latest month:", error);
+      return null;
+    }
+  },  
 
   getMonthlyPerformance: async (filters: TurnoverFilters): Promise<MonthlyPerformanceData[]> => {
     const yearClause = sql`AND year = ${filters.year}`;

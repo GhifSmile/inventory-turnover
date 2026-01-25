@@ -9,6 +9,7 @@ import TrendTurnoverChartMonthly from "@/components/dashboard/LineChartTurnoverM
 import ComparisonBarChart from "@/components/dashboard/BarChartComparison";
 import DOIAchievementCard from "@/components/dashboard/DOICard";
 import PlantAchievementCard from "@/components/dashboard/PlantAchievementCard";
+import DataSubmissionTracker from "@/components/dashboard/dataSubmissionTracker";
 
 import { InventoryTurnoverService } from "@/services/inventoryTurnover";
 
@@ -41,7 +42,19 @@ export default async function ExecutiveSummary({
     plants: selectedPlants,
   };
 
-  const[overallTurnover, fishTurnover, shrimpTurnover, monthlyTrend, plantComparison, overallDOI, fishDOI, shrimpDOI] = await Promise.all([
+  let currentMonthForMoM: number;
+
+  if (filters.months && filters.months.length > 0) {
+    // Ambil bulan terbesar yang dipilih user
+    currentMonthForMoM = Math.max(...filters.months);
+  } else {
+    // Jika user tidak pilih bulan (All), gunakan bulan sekarang
+    const latestMonth = await InventoryTurnoverService.getLatestMonthAvailable(selectedYear);
+
+    currentMonthForMoM = latestMonth || (new Date().getMonth() + 1);
+  }
+
+  const[overallTurnover, fishTurnover, shrimpTurnover, monthlyTrend, plantComparison, overallDOI, fishDOI, shrimpDOI, submissionStatus] = await Promise.all([
     InventoryTurnoverService.getOverallTurnover(filters),
     InventoryTurnoverService.getFishTurnover(filters),
     InventoryTurnoverService.getShrimpTurnover(filters),
@@ -49,7 +62,8 @@ export default async function ExecutiveSummary({
     InventoryTurnoverService.getPlantComparison(filters),
     InventoryTurnoverService.getOverallDOI(filters),
     InventoryTurnoverService.getFishDOI(filters),
-    InventoryTurnoverService.getShrimpDOI(filters)
+    InventoryTurnoverService.getShrimpDOI(filters),
+    InventoryTurnoverService.getSubmissionStatus(filters),
   ]);
 
   return (
@@ -106,7 +120,7 @@ export default async function ExecutiveSummary({
       <div className="max-w-7xl mx-auto px-8 py-10">
 
         <div className="mb-6">
-          {/* <DataSubmissionTracker data={submissionStatus} currentMonth={currentMonthForMoM}  /> */}
+          <DataSubmissionTracker data={submissionStatus} currentMonth={currentMonthForMoM}  />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
