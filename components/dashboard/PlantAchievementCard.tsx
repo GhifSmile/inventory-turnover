@@ -11,12 +11,22 @@ interface Props {
 }
 
 export default function PlantAchievementCard({ data, year }: Props) {
-  const achievedCount = data.filter(p => p.overallTurnover >= 2.5 && p.overallTurnover <= 4).length;
-  const TOTAL_PLANTS = 5;
+  const minTarget = 2.5;
+  const maxTarget = 4;
+
+  // Hitung pencapaian berdasarkan fishTurnover dan shrimpTurnover
+  const achievedCount = data.reduce((acc, p) => {
+    let count = 0;
+    if (p.fishTurnover >= minTarget && p.fishTurnover <= maxTarget) count++;
+    if (p.shrimpTurnover >= minTarget && p.shrimpTurnover <= maxTarget) count++;
+    return acc + count;
+  }, 0);
+
+  const TOTAL_PLANTS = 7;
   
   const chartData = [
     { name: "Achieved", value: achievedCount },
-    { name: "Remaining", value: TOTAL_PLANTS - achievedCount },
+    { name: "Remaining", value: Math.max(0, TOTAL_PLANTS - achievedCount) },
   ];
 
   // Menggunakan warna hex yang diminta untuk donut bagian achieved

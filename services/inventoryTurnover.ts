@@ -171,6 +171,11 @@ export const InventoryTurnoverService ={
     try {
       let targetMonth: number;
 
+      const toTitleCase = (str: string) => {
+        if (!str) return "";
+        return str.toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase());
+      };      
+
       const plantData = await db.execute(sql`
           SELECT DISTINCT plant FROM inventory_turnover
           ORDER BY plant ASC
@@ -199,18 +204,38 @@ export const InventoryTurnoverService ={
 
       // Hanya ambil data untuk targetMonth yang ditentukan
       const result = await db.execute(sql`
-        SELECT DISTINCT plant
+        SELECT DISTINCT plant, business_unit
         FROM inventory_turnover
         WHERE year = ${filters.year} 
           AND month = ${targetMonth}
           ${plantClause}
       `);
 
-      const rows = result as unknown as { plant: string }[];
+      const rows = result as unknown as { plant: string; business_unit: string }[];
 
-      return activePlants.map(plantName => {
-        // Cek apakah ada record untuk plant ini di bulan tersebut
-        const isFilled = rows.some(r => r.plant?.toUpperCase() === plantName.toUpperCase());
+      const uniqueGroups = Array.from(
+        new Set(rows.map(r => `${r.plant}|${r.business_unit}`))
+      ).map(key => {
+        const [plant, business_unit] = key.split('|');
+        return { plant, business_unit };
+      });  
+      
+      uniqueGroups.sort((a, b) => {
+        const plantCompare = a.plant.localeCompare(b.plant);
+        if (plantCompare !== 0) return plantCompare;
+        return a.business_unit.localeCompare(b.business_unit);
+      });      
+
+      return uniqueGroups.map(group => {
+      const isFilled = rows.some(r => 
+        r.plant?.toUpperCase() === group.plant.toUpperCase() &&
+        r.business_unit?.toUpperCase() === group.business_unit.toUpperCase()
+      );
+
+      const formattedBU = toTitleCase(group.business_unit);
+        const displayName = formattedBU 
+          ? `${group.plant} - ${formattedBU}` 
+          : group.plant;
 
         const details = [{
           month: targetMonth,
@@ -218,7 +243,7 @@ export const InventoryTurnoverService ={
         }];
 
         return {
-          plant: plantName,
+          plant: displayName,
           completedMonths: isFilled ? 1 : 0,
           percentage: isFilled ? 100 : 0,
           details: details

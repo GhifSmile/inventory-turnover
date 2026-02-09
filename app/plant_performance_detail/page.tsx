@@ -90,7 +90,7 @@ export default async function PerformanceDetailPage({
               <thead>
                 <tr className="bg-gradient-to-r from-[#f2a977] to-[#dd8c8d] text-white uppercase tracking-wider font-bold">
                   {/* Lebar diset tetap (80 + 100 + 60 = 240px total sticky) */}
-                  <th className="w-[80px] px-4 py-3 sticky left-0 z-20 bg-[#f2a977]">Plant</th>
+                  <th className="w-[80px] px-4 py-3 sticky left-0 z-20 bg-[#f2a977]">Plant Group</th>
                   <th className="w-[100px] px-4 py-3 sticky left-[80px] z-20 bg-[#f2a977]">Segment</th>
                   <th className="w-[60px] px-4 py-3 text-center sticky left-[180px] z-20 bg-[#f2a977]">Year</th>
                   

@@ -45,7 +45,7 @@ export default function DataSubmissionTracker({ data, currentMonth }: Props) {
               <div key={item.plant} className="flex flex-col gap-2">
                 {/* Info Plant & Counter (Bulan) */}
                 <div className="flex justify-between items-center">
-                  <span className="text-[11px] font-black text-slate-700 tracking-tight uppercase">
+                  <span className="text-[11px] font-black text-slate-700 tracking-tight">
                     {item.plant}
                   </span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
