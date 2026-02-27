@@ -91,9 +91,9 @@ export default async function TrendAnalysis({
                   <th className="w-[60px] px-4 py-3 sticky left-0 z-20 bg-[#ca7bfc]">Year</th>
                   <th className="w-[80px] px-4 py-3 sticky left-[60px] z-20 bg-[#ca7bfc]">Month</th>
                   
-                  <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Overall Accuracy</th>
-                  <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Fish Accuracy</th>
-                  <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Shrimp Accuracy</th>
+                  <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Overall Turnover</th>
+                  <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Fish Turnover</th>
+                  <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Shrimp Turnover</th>
                   <th className="w-[180px] px-4 py-3 border-r border-white/10 text-center">Best Performing Plant</th>
                   <th className="w-[180px] px-4 py-3 text-center">Worst Performing Plant</th>
                 </tr>
