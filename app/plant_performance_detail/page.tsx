@@ -101,7 +101,7 @@ export default async function PerformanceDetailPage({
                   <th className="w-[80px] px-4 py-3 border-r border-white/10 text-center">YTD Avg</th>
                   <th className="w-[80px] px-4 py-3 border-r border-white/10 text-center">VS Target</th>
                   <th className="w-[80px] px-4 py-3 border-r border-white/10 text-center">Status</th>
-                  <th className="w-[150px] px-4 py-3">Action Needed</th>
+                  <th className="w-[200px] px-4 py-3 text-left">Action Needed</th>
                 </tr>
               </thead>
               
@@ -177,7 +177,7 @@ export default async function PerformanceDetailPage({
                         <td className="px-4 py-3 text-center text-lg leading-none border-r border-slate-100">
                           {statusEmoji}
                         </td>
-                        <td className={`px-4 py-3 italic whitespace-nowrap ${vsT >= 0 ? 'text-green-600' : 'font-medium ' + colorClass}`}>
+                        <td className={`px-4 py-3 italic break-words leading-tight ${vsT >= 0 ? 'text-green-600' : 'font-medium ' + colorClass}`}>
                           {actionText}
                         </td>
                       </tr>
