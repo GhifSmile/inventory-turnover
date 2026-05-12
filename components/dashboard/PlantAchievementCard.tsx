@@ -11,16 +11,129 @@ interface Props {
 }
 
 export default function PlantAchievementCard({ data, year }: Props) {
-  const minTarget = 2.5;
-  const maxTarget = 4;
+
+  // const minTarget = 2.5;
+  // const maxTarget = 4;
 
   // Hitung pencapaian berdasarkan fishTurnover dan shrimpTurnover
+  // const achievedCount = data.reduce((acc, p) => {
+  //   let count = 0;
+  //   if (p.fishTurnover >= minTarget && p.fishTurnover <= maxTarget) count++;
+  //   if (p.shrimpTurnover >= minTarget && p.shrimpTurnover <= maxTarget) count++;
+  //   return acc + count;
+  // }, 0);
+
+  const plantThresholds = {
+    'LPG fish': {
+      critical: 4.5,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 4.5,
+      optimalmin: 3.3,
+      optimalmax: 3.8,
+      capitalriskmin: 2.5,
+      capitalriskmax: 3.3,
+      important: 2.5,
+    },
+    'MDN fish': {
+      critical: 4.5,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 4.5,
+      optimalmin: 3.3,
+      optimalmax: 3.8,
+      capitalriskmin: 2.5,
+      capitalriskmax: 3.3,
+      important: 2.5,
+    },  
+    'SPJ fish': {
+      critical: 4.3,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 4.3,
+      optimalmin: 3.0,
+      optimalmax: 3.8,
+      capitalriskmin: 2.1,
+      capitalriskmax: 3.0,
+      important: 2.1,
+    },    
+    'MDN shrimp': {
+      critical: 4.3,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 4.3,
+      optimalmin: 3.0,
+      optimalmax: 3.8,
+      capitalriskmin: 2.1,
+      capitalriskmax: 3.0,
+      important: 2.1,
+    },     
+    'LPG shrimp': {
+      critical: 5.0,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 4.9,
+      optimalmin: 2.72,
+      optimalmax: 3.8,
+      capitalriskmin: 2.0,
+      capitalriskmax: 2.72,
+      important: 2.0,
+    }, 
+    'CKP fish': {
+      critical: 5.5,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 5.4,
+      optimalmin: 2.5,
+      optimalmax: 3.8,
+      capitalriskmin: 1.8,
+      capitalriskmax: 2.4,
+      important: 1.8,
+    },  
+    'SBY shrimp': {
+      critical: 5.5,
+      stockoutriskmin: 3.8,
+      stockoutriskmax: 5.4,
+      optimalmin: 2.5,
+      optimalmax: 3.8,
+      capitalriskmin: 1.8,
+      capitalriskmax: 2.4,
+      important: 1.8,
+    },                                                                                
+  }  
+
+  type ThresholdData = typeof plantThresholds;
+
   const achievedCount = data.reduce((acc, p) => {
     let count = 0;
-    if (p.fishTurnover >= minTarget && p.fishTurnover <= maxTarget) count++;
-    if (p.shrimpTurnover >= minTarget && p.shrimpTurnover <= maxTarget) count++;
+
+    if (year >= 2026) {
+      const getOptimalRange = (plant: string, type: string) => {
+        const key = `${plant} ${type}`;
+        const fallbackKey = `${plant} ${type === 'fish' ? 'shrimp' : 'fish'}`;
+
+        const thresholds = plantThresholds as Record<string, any>;
+        const threshold = thresholds[key] || thresholds[fallbackKey];
+
+        return threshold 
+          ? { min: threshold.optimalmin, max: threshold.optimalmax } 
+          : { min: null, max: null };
+      };
+
+      const fishRange = getOptimalRange(p.plant, 'fish');
+      const shrimpRange = getOptimalRange(p.plant, 'shrimp');
+
+      if (fishRange.min !== null && p.fishTurnover >= fishRange.min && p.fishTurnover <= fishRange.max) {
+        count++;
+      }
+      if (shrimpRange.min !== null && p.shrimpTurnover >= shrimpRange.min && p.shrimpTurnover <= shrimpRange.max) {
+        count++;
+      }
+
+    } else {
+      const minTarget = 2.5;
+      const maxTarget = 4;
+
+      if (p.fishTurnover >= minTarget && p.fishTurnover <= maxTarget) count++;
+      if (p.shrimpTurnover >= minTarget && p.shrimpTurnover <= maxTarget) count++;
+    }
+
     return acc + count;
-  }, 0);
+  }, 0);  
 
   const TOTAL_PLANTS = 7;
   

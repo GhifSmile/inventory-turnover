@@ -156,7 +156,7 @@ export default async function ExecutiveSummary({
         {/* BARIS 3: COMPARISON BAR CHART (Full Width di bawah) */}
         <div className="grid grid-cols-1">
           <div className="lg:col-span-1">
-            <ComparisonBarChart data={plantComparison}/>
+            <ComparisonBarChart data={plantComparison} year={selectedYear}/>
           </div>
         </div>   
 

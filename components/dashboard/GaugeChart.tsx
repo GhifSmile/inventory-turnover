@@ -15,35 +15,40 @@ interface Props {
 export default function GaugeChart({ value, title, type , year}: Props) {
 
   const getArcConfig = () => {
-    switch (type) {
-      case 'overall':
-        return [
-          { limit: 1.9, color: '#f04487' },
-          { limit: 2.4, color: '#fbb92c' },
-          { limit: 4.0, color: '#02d1a7'},
-          { limit: 5.0, color: '#fbb92c' },
-          { limit: 6.0, color: '#f04487' },
-        ];
-      case 'fish':
-        return [
-          { limit: 1.9, color: '#f04487' },
-          { limit: 2.4, color: '#fbb92c' },
-          { limit: 4.0, color: '#02d1a7'},
-          { limit: 5.0, color: '#fbb92c' },
-          { limit: 6.0, color: '#f04487' },
-        ];
-      case 'shrimp':
-        return [
-          { limit: 1.9, color: '#f04487' },
-          { limit: 2.4, color: '#fbb92c' },
-          { limit: 4.0, color: '#02d1a7'},
-          { limit: 5.0, color: '#fbb92c' },
-          { limit: 6.0, color: '#f04487' },
-        ];
-      default:
-        return [];
-    }
-  };
+      if (year >= 2026) {
+        switch (type) {
+          case 'overall':
+          case 'fish':
+          case 'shrimp':
+            return [
+              { limit: 2.1, color: '#f04487' },
+              { limit: 3.0, color: '#fbb92c' },
+              { limit: 3.8, color: '#02d1a7' },
+              { limit: 4.3, color: '#fbb92c' },
+              { limit: 6.0, color: '#f04487' },
+            ];
+          default:
+            return [];
+        }
+      } else {
+        switch (type) {
+          case 'overall':
+          case 'fish':
+          case 'shrimp':
+            return [
+              { limit: 1.9, color: '#f04487' },
+              { limit: 2.4, color: '#fbb92c' },
+              { limit: 4.0, color: '#02d1a7' },
+              { limit: 5.0, color: '#fbb92c' },
+              { limit: 6.0, color: '#f04487' },
+            ];
+          default:
+            return [];
+        }
+      }
+    };
+
+  const currentTicks = getArcConfig().map(arc => ({ value: arc.limit }));  
 
   return (
     <Card className="bg-white border-none shadow-sm">
@@ -83,13 +88,7 @@ export default function GaugeChart({ value, title, type , year}: Props) {
                     fontSize: 7,
                 }
               },
-              ticks: [
-                { value: 1.9 },
-                { value: 2.4 },
-                { value: 4.0 },
-                { value: 5.0 },
-                { value: 6.0 },
-              ]
+              ticks: currentTicks
             }
           }}
           arc={{

@@ -8,9 +8,10 @@ import { useCallback } from "react";
 
 interface Props {
   data: PlantComparisonData[];
+  year: number
 }
 
-export default function ComparisonBarChart({ data }: Props) {
+export default function ComparisonBarChart({ data, year}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -34,8 +35,8 @@ export default function ComparisonBarChart({ data }: Props) {
 
   const tooltipOrder = ["Overall Turnover", "Fish Turnover", "Shrimp Turnover"];
   const sortedData = [...data].sort((a, b) => {
-      const diffA = Math.abs(a.overallTurnover - 3.25);
-      const diffB = Math.abs(b.overallTurnover - 3.25);
+      const diffA = Math.abs(a.overallTurnover - (year < 2026? 3.25: 3.4));
+      const diffB = Math.abs(b.overallTurnover - (year < 2026? 3.25: 3.4));
       return diffB - diffA;
     });
   const legendOrder = ["Overall Turnover", "Fish Turnover", "Shrimp Turnover"]

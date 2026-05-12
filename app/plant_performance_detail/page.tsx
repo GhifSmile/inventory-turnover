@@ -109,39 +109,152 @@ export default async function PerformanceDetailPage({
                 {performanceData.length > 0 ? (
                   performanceData.map((row, idx) => {
 
-                    const target = row.year >= 2026 
-                      ? 3.5 
-                      : 3;
+                    // let target = row.year >= 2026 ? 3.5 : 3;
 
+                    const plantThresholds = {
+                      'LPG fish': {
+                        critical: 4.5,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 4.5,
+                        optimalmin: 3.3,
+                        optimalmax: 3.8,
+                        capitalriskmin: 2.5,
+                        capitalriskmax: 3.3,
+                        important: 2.5,
+                      },
+                      'MDN fish': {
+                        critical: 4.5,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 4.5,
+                        optimalmin: 3.3,
+                        optimalmax: 3.8,
+                        capitalriskmin: 2.5,
+                        capitalriskmax: 3.3,
+                        important: 2.5,
+                      },  
+                      'SPJ fish': {
+                        critical: 4.3,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 4.3,
+                        optimalmin: 3.0,
+                        optimalmax: 3.8,
+                        capitalriskmin: 2.1,
+                        capitalriskmax: 3.0,
+                        important: 2.1,
+                      },    
+                      'MDN shrimp': {
+                        critical: 4.3,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 4.3,
+                        optimalmin: 3.0,
+                        optimalmax: 3.8,
+                        capitalriskmin: 2.1,
+                        capitalriskmax: 3.0,
+                        important: 2.1,
+                      },     
+                      'LPG shrimp': {
+                        critical: 5.0,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 4.9,
+                        optimalmin: 2.72,
+                        optimalmax: 3.8,
+                        capitalriskmin: 2.0,
+                        capitalriskmax: 2.72,
+                        important: 2.0,
+                      }, 
+                      'CKP fish': {
+                        critical: 5.5,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 5.4,
+                        optimalmin: 2.5,
+                        optimalmax: 3.8,
+                        capitalriskmin: 1.8,
+                        capitalriskmax: 2.4,
+                        important: 1.8,
+                      },  
+                      'SBY shrimp': {
+                        critical: 5.5,
+                        stockoutriskmin: 3.8,
+                        stockoutriskmax: 5.4,
+                        optimalmin: 2.5,
+                        optimalmax: 3.8,
+                        capitalriskmin: 1.8,
+                        capitalriskmax: 2.4,
+                        important: 1.8,
+                      },                                                                                
+                    }
+
+                    const key = `${row.plant} ${row.businessUnit}`;
+                    const thresholds = plantThresholds[key as keyof typeof plantThresholds];
                     const ytd = row.inventory_turnover_ytd;
-                    const vsT = ytd - target
+                    // const target2025 = 3.0;
 
-                    const vsTargetPercent = vsT;
-
+                    let vsT: string | number = 0;
                     let statusEmoji = "";
                     let actionText = "";
                     let colorClass = "";
 
-                    if(ytd >= 5.1) {
-                      statusEmoji = "🔴";
-                      actionText = "Critical Warning: Insufficient Stock";
-                      colorClass = "text-red-500";
-                    } else if (4.1 <= ytd && ytd <= 5) {
-                      statusEmoji = "🟡";
-                      actionText = "Stockout Risk";
-                      colorClass = "text-yellow-600";
-                    } else if (2.5 <= ytd && ytd <= 4) {
-                      statusEmoji = "🟢";
-                      actionText = "Optimal Stock";
-                      colorClass = "text-green-600";                      
-                    } else if (2 <= ytd && ytd <= 2.4) {
-                      statusEmoji = "🟡";
-                      actionText = "Capital Risk (Overstock)";
-                      colorClass = "text-yellow-600";
-                    } else if (ytd < 2) {
-                      statusEmoji = "🔴";
-                      actionText = "Important to Note (Capital Lock)";
-                      colorClass = "text-red-500";                      
+                    if (row.year >= 2026) {
+                        if (!thresholds) {
+                            statusEmoji = "⚪";
+                            actionText = "Threshold Not Found";
+                            colorClass = "text-gray-400";
+                            vsT = "-";
+                        } else {
+                            if (ytd >= thresholds.optimalmin && ytd <= thresholds.optimalmax) {
+                                statusEmoji = "🟢";
+                                actionText = "Optimal Stock";
+                                colorClass = "text-green-600";
+                                vsT = "-";
+                            } else {
+                                vsT = ytd < thresholds.optimalmin ? ytd - thresholds.optimalmin : ytd - thresholds.optimalmax;
+                            
+                                if (ytd > thresholds.critical) {
+                                    statusEmoji = "🔴";
+                                    actionText = "Critical Warning: Insufficient Stock";
+                                    colorClass = "text-red-500";
+                                } else if (ytd > thresholds.stockoutriskmin && ytd <= thresholds.stockoutriskmax) {
+                                    statusEmoji = "🟡";
+                                    actionText = "Stockout Risk";
+                                    colorClass = "text-yellow-600";
+                                } else if (ytd >= thresholds.capitalriskmin && ytd < thresholds.capitalriskmax) {
+                                    statusEmoji = "🟡";
+                                    actionText = "Capital Risk (Overstock)";
+                                    colorClass = "text-yellow-600";
+                                } else {
+                                    statusEmoji = "🔴";
+                                    actionText = "Important to Note (Capital Lock)";
+                                    colorClass = "text-red-500";
+                                }
+                            }
+                        }
+                    } else {
+                        if (ytd >= 2.5 && ytd <= 4) {
+                            statusEmoji = "🟢";
+                            actionText = "Optimal Stock";
+                            colorClass = "text-green-600";
+                            vsT = "-";
+                        } else {
+                            vsT = ytd < 2.5? ytd - 2.5 : ytd - 4;
+                        
+                            if (ytd >= 5.1) {
+                                statusEmoji = "🔴";
+                                actionText = "Critical Warning: Insufficient Stock";
+                                colorClass = "text-red-500";
+                            } else if (ytd >= 4.1 && ytd <= 5) {
+                                statusEmoji = "🟡";
+                                actionText = "Stockout Risk";
+                                colorClass = "text-yellow-600";
+                            } else if (ytd >= 2 && ytd <= 2.4) {
+                                statusEmoji = "🟡";
+                                actionText = "Capital Risk (Overstock)";
+                                colorClass = "text-yellow-600";
+                            } else {
+                                statusEmoji = "🔴";
+                                actionText = "Important to Note (Capital Lock)";
+                                colorClass = "text-red-500";
+                            }
+                        }
                     }
 
                     return (
@@ -171,13 +284,15 @@ export default async function PerformanceDetailPage({
                         <td className="px-4 py-3 text-center font-bold border-r border-slate-100 whitespace-nowrap">
                           {(row.inventory_turnover_ytd).toFixed(1)}
                         </td>
-                        <td className={`px-4 py-3 text-center font-bold border-r border-slate-100 whitespace-nowrap ${colorClass}`}>
-                          {vsT > 0 ? '+' : ''}{vsT.toFixed(1)}
+                        <td className={`px-4 py-3 text-center font-bold border-r border-slate-100 whitespace-nowrap ${typeof vsT === 'number' ? colorClass : 'text-slate-400'}`}>
+                          {typeof vsT === 'number' 
+                            ? (vsT > 0 ? `+${vsT.toFixed(2)}` : vsT.toFixed(2)) 
+                            : vsT}
                         </td>
                         <td className="px-4 py-3 text-center text-lg leading-none border-r border-slate-100">
                           {statusEmoji}
                         </td>
-                        <td className={`px-4 py-3 italic break-words leading-tight ${vsT >= 0 ? 'text-green-600' : 'font-medium ' + colorClass}`}>
+                        <td className={`px-4 py-3 italic break-words leading-tight ${vsT === '-' ? 'text-green-600' : 'font-medium ' + colorClass}`}>
                           {actionText}
                         </td>
                       </tr>

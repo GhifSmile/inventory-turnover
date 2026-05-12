@@ -43,9 +43,9 @@ export default function TrendTurnoverChartMonthly({ data, year }: Props) {
 
   const chartData = data.map(item => ({
     ...item,
-    UpperBound: 4,
-    Target: year<2026?3.0: 3.5,
-    LowerBound : 2.5
+    UpperBound: year < 2026? 4: 3.8,
+    // Target: year<2026?3.0: 3.5,
+    LowerBound : year < 2026? 2.5 : 3.0
   }));
 
   return (
@@ -140,7 +140,7 @@ export default function TrendTurnoverChartMonthly({ data, year }: Props) {
               name="Lower Bound"
             />        
 
-            <Line 
+            {/* <Line 
               type="linear" 
               dataKey="Target" 
               stroke="#f04487" 
@@ -148,7 +148,7 @@ export default function TrendTurnoverChartMonthly({ data, year }: Props) {
               strokeWidth={1.5} 
               dot={false} 
               name="Target Inventory Turnover"
-            />       
+            />        */}
 
             <Line 
               type="linear" 
