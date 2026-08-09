@@ -3,7 +3,7 @@ import UploadButton from "@/components/dashboard/UploadButton";
 import DownloadButton from "@/components/dashboard/downloadButton";
 import FilterGroup from "@/components/dashboard/filterGroup";
 
-import { InventoryTurnoverService } from "@/services/inventoryTurnover";
+import { ITOService} from "@/services/inventoryTurnover";
 
 export default async function TrendAnalysis({
   searchParams,
@@ -12,7 +12,7 @@ export default async function TrendAnalysis({
 }) {
   
   const params = await searchParams;
-  const options = await InventoryTurnoverService.getFilterOptions();
+  const options = await ITOService.getFilterOptions();
 
   const selectedYear = params.year 
     ? Number(params.year.split(",")[0]) 
@@ -27,7 +27,7 @@ export default async function TrendAnalysis({
     months: selectedMonths,
   };  
 
-  const trendData = await InventoryTurnoverService.getTrendAnalysis(filters);
+  const trendData = await ITOService.getTrendAnalysis(filters);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -86,10 +86,10 @@ export default async function TrendAnalysis({
             {/* table-fixed untuk memastikan hitungan pixel 'left' akurat */}
             <table className="w-full text-left text-[11px] border-collapse table-fixed">
               <thead>
-                <tr className="bg-gradient-to-r from-[#ca7bfc] to-[#4d73f9] text-white uppercase tracking-wider font-bold">
+                <tr className="bg-[#dd8c8d] text-white uppercase tracking-wider font-bold">
                   {/* Sticky Column: Year (60px) + Month (80px) = 140px total sticky */}
-                  <th className="w-[60px] px-4 py-3 sticky left-0 z-20 bg-[#ca7bfc]">Year</th>
-                  <th className="w-[80px] px-4 py-3 sticky left-[60px] z-20 bg-[#ca7bfc]">Month</th>
+                  <th className="w-[60px] px-4 py-3 sticky left-0 z-20 bg-[#dd8c8d]">Year</th>
+                  <th className="w-[80px] px-4 py-3 sticky left-[60px] z-20 bg-[#dd8c8d]">Month</th>
                   
                   <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Overall Turnover</th>
                   <th className="w-[120px] px-4 py-3 border-r border-white/10 text-center">Fish Turnover</th>
@@ -113,13 +113,13 @@ export default async function TrendAnalysis({
                       </td>
 
                       <td className="px-4 py-3 border-r border-slate-100 text-center">
-                          {row.overallTurnover.toFixed(1)}
+                          {row.overallTurnover.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 border-r border-slate-100 text-center">
-                          {row.fishTurnover.toFixed(1)}
+                          {row.fishTurnover.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 border-r border-slate-100 text-center">
-                          {row.shrimpTurnover.toFixed(1)}
+                          {row.shrimpTurnover.toFixed(2)}
                       </td>
                       <td className="px-4 py-3 border-r border-slate-100 text-center font-semibold text-teal-600">
                           {row.bestPerforming}

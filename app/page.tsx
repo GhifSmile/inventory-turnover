@@ -1,17 +1,17 @@
 import Navigation from "@/components/dashboard/Navigation";
+import FilterGroup from "@/components/dashboard/filterGroup";
+import DataSubmissionTracker from "@/components/dashboard/dataSubmissionTracker";
+import GaugeChart from "@/components/dashboard/GaugeChart";
+
+import TrendTurnoverChartMonthly from "@/components/dashboard/LineChartITO";
+import ComparisonBarChart from "@/components/dashboard/BarChartComparison";
+import TopITOCard from "@/components/dashboard/TopITOCard";
+import PlantAchievementCard from "@/components/dashboard/PlantAchievementCard";
 
 import DownloadButton from "@/components/dashboard/downloadButton";
 import UploadButton from "@/components/dashboard/UploadButton";
-import FilterGroup from "@/components/dashboard/filterGroup";
 
-import GaugeChart from "@/components/dashboard/GaugeChart";
-import TrendTurnoverChartMonthly from "@/components/dashboard/LineChartTurnoverMonthly";
-import ComparisonBarChart from "@/components/dashboard/BarChartComparison";
-import DOIAchievementCard from "@/components/dashboard/DOICard";
-import PlantAchievementCard from "@/components/dashboard/PlantAchievementCard";
-import DataSubmissionTracker from "@/components/dashboard/dataSubmissionTracker";
-
-import { InventoryTurnoverService } from "@/services/inventoryTurnover";
+import { ITOService, ITOUtils} from "@/services/inventoryTurnover";
 
 export default async function ExecutiveSummary({
   searchParams,
@@ -20,7 +20,7 @@ export default async function ExecutiveSummary({
 }) {
 
   const params = await searchParams;
-  const options = await InventoryTurnoverService.getFilterOptions();
+  const options = await ITOService.getFilterOptions();
 
   const selectedYear = params.year 
     ? Number(params.year)
@@ -49,22 +49,66 @@ export default async function ExecutiveSummary({
     currentMonthForMoM = Math.max(...filters.months);
   } else {
     // Jika user tidak pilih bulan (All), gunakan bulan sekarang
-    const latestMonth = await InventoryTurnoverService.getLatestMonthAvailable(selectedYear);
+    const latestMonth = await ITOService.getLatestMonthAvailable(selectedYear);
 
     currentMonthForMoM = latestMonth || (new Date().getMonth() + 1);
   }
 
-  const[overallTurnover, fishTurnover, shrimpTurnover, monthlyTrend, plantComparison, overallDOI, fishDOI, shrimpDOI, submissionStatus] = await Promise.all([
-    InventoryTurnoverService.getOverallTurnover(filters),
-    InventoryTurnoverService.getFishTurnover(filters),
-    InventoryTurnoverService.getShrimpTurnover(filters),
-    InventoryTurnoverService.getMonthlyTrendData(filters),
-    InventoryTurnoverService.getPlantComparison(filters),
-    InventoryTurnoverService.getOverallDOI(filters),
-    InventoryTurnoverService.getFishDOI(filters),
-    InventoryTurnoverService.getShrimpDOI(filters),
-    InventoryTurnoverService.getSubmissionStatus(filters),
-  ]);
+  const baselineMonthNumber = currentMonthForMoM;
+
+  const MONTH_LABELS = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+
+  const baselineMonth = MONTH_LABELS[baselineMonthNumber - 1] ?? MONTH_LABELS[0];
+
+  const compareMonths = params.compare
+    ? String(params.compare)
+        .split(",")
+        .filter((m) => MONTH_LABELS.includes(m) && m !== baselineMonth)
+    : [];  
+  
+  const displayMonths = [baselineMonth, ...compareMonths].slice(0, 3);
+
+  const [rawData, submissionStatus] = await Promise.all([
+    ITOService.getInventoryTurnoverData(filters),
+    ITOService.getSubmissionStatus(filters)
+  ]);  
+
+  const overallITO = ITOUtils.calculateOverall(rawData)
+  const fishITO = ITOUtils.calculateFish(rawData)
+  const shrimpITO = ITOUtils.calculateShrimp(rawData)
+  const monthlyTrend = ITOUtils.computeMonthlyTrend(rawData)
+
+  const kodePakanITO = ITOUtils.computeITOByPakan(rawData)
+  // const[overallTurnover, fishTurnover, shrimpTurnover, monthlyTrend, plantComparison, overallDOI, fishDOI, shrimpDOI, submissionStatus] = await Promise.all([
+  //   InventoryTurnoverService.getOverallTurnover(filters),
+  //   InventoryTurnoverService.getFishTurnover(filters),
+  //   InventoryTurnoverService.getShrimpTurnover(filters),
+  //   InventoryTurnoverService.getMonthlyTrendData(filters),
+  //   InventoryTurnoverService.getPlantComparison(filters),
+  //   InventoryTurnoverService.getOverallDOI(filters),
+  //   InventoryTurnoverService.getFishDOI(filters),
+  //   InventoryTurnoverService.getShrimpDOI(filters),
+  //   InventoryTurnoverService.getSubmissionStatus(filters),
+  // ]);
+
+  const perMonthComparison = await Promise.all(
+    displayMonths.map(async (label) => {
+      const monthNumber = MONTH_LABELS.indexOf(label) + 1;
+      const monthRaw = await ITOService.getInventoryTurnoverData({
+        ...filters,
+        months: [monthNumber],
+      });
+      return { month: label, comparison: ITOUtils.computePlantComparison(monthRaw) };
+    }),
+  );
+
+  const comparisonByMonth: Record<string, ReturnType<typeof ITOUtils.computePlantComparison>> = {};
+  perMonthComparison.forEach(({ month, comparison }) => {
+    comparisonByMonth[month] = comparison;
+  });
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -124,9 +168,9 @@ export default async function ExecutiveSummary({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          <GaugeChart title="Overall Inventory Turnover" value={overallTurnover} type="overall" year={selectedYear}/>
-          <GaugeChart title="Fish Inventory Turnover" value={fishTurnover} type="fish" year={selectedYear}/>
-          <GaugeChart title="Shrimp Inventory Turnover" value={shrimpTurnover} type="shrimp" year={selectedYear}/>
+          <GaugeChart title="Overall Inventory Turnover" value={overallITO} type="overall" year={selectedYear} plants={selectedPlants}/>
+          <GaugeChart title="Fish Inventory Turnover" value={fishITO} type="fish" year={selectedYear} plants={selectedPlants}/>
+          <GaugeChart title="Shrimp Inventory Turnover" value={shrimpITO} type="shrimp" year={selectedYear} plants={selectedPlants}/>
         </div>
 
         {/* BARIS 2: TREND CHART (Kiri) & 2 SUMMARY CARDS VERTICAL (Kanan) */}
@@ -137,27 +181,46 @@ export default async function ExecutiveSummary({
             <TrendTurnoverChartMonthly data={monthlyTrend} year={selectedYear}/>
           </div>
 
+          <div className="lg:col-span-1">
+            <TopITOCard data={kodePakanITO}/>
+          </div>
+
           {/* 2 Summary Cards di-stack secara vertikal dalam 1 kolom sisanya */}
           {/* h-full dan flex-1 di sini penting agar tinggi card mengikuti tinggi chart di kiri */}
-          <div className="flex flex-col sm:flex-row lg:flex-col gap-4 h-full">
+          {/* <div className="flex flex-col sm:flex-row lg:flex-col gap-4 h-full"> */}
             
-            <div className="flex-1 w-full sm:w-1/2 lg:w-full">
+            {/* <div className="flex-1 w-full sm:w-1/2 lg:w-full">
               <DOIAchievementCard overallDOI={overallDOI} fishDOI={fishDOI} shrimpDOI={shrimpDOI}/>
-            </div>
+            </div> */}
 
-            <div className="flex-1 w-full sm:w-1/2 lg:w-full">
+            {/* <div className="flex-1 w-full sm:w-1/2 lg:w-full">
               <PlantAchievementCard data={plantComparison} year={selectedYear} />
-            </div>
+            </div> */}
 
-          </div>
+          {/* </div> */}
 
         </div>
 
         {/* BARIS 3: COMPARISON BAR CHART (Full Width di bawah) */}
-        <div className="grid grid-cols-1">
-          <div className="lg:col-span-1">
-            <ComparisonBarChart data={plantComparison} year={selectedYear}/>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          
+          <div className="lg:col-span-2">
+            <ComparisonBarChart 
+              comparisonByMonth={comparisonByMonth}
+              baselineMonth={baselineMonth}
+              displayMonths={displayMonths}
+              year={selectedYear}
+            />
           </div>
+
+          <div className="lg:col-span-1">
+            <PlantAchievementCard
+              comparisonByMonth={comparisonByMonth}
+              year={selectedYear}
+              displayMonths={displayMonths}
+            />
+          </div>
+
         </div>   
 
       </div>

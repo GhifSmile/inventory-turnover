@@ -155,6 +155,131 @@ INNER JOIN
 ORDER BY
     t5.year, t5.plant, t5.business_unit
 );--> statement-breakpoint
+CREATE VIEW "public"."doi_plant_performance_detail_monthly" AS (
+WITH Code_Summary AS (
+    SELECT
+        t1.year,
+        t1.month,
+        t1.plant,
+        t1.business_unit,
+        SUM(t1.saldo_awal)  AS sum_saldo_awal,
+        SUM(t1.penerimaan) AS sum_penerimaan,
+        SUM(t1.pemakaian)  AS sum_pemakaian,
+        SUM(t1.saldo_akhir) AS sum_saldo_akhir,
+        SUM(t1.avg_saldo)  AS sum_avg_saldo,
+        EXTRACT(
+            DAY FROM (
+                DATE_TRUNC('month', MAKE_DATE(t1.year, t1.month, 1))
+                + INTERVAL '1 month - 1 day'
+            )
+        ) AS total_days
+    FROM inventory_turnover t1
+    GROUP BY
+        t1.year,
+        t1.month,
+        t1.plant,
+        t1.business_unit
+),
+
+BU_Monthly_Inventory_Turnover AS (
+    SELECT
+        t2.year,
+        t2.month,
+        t2.plant,
+        t2.business_unit,
+        ROUND(coalesce(t2.sum_pemakaian / NULLIF(t2.sum_avg_saldo, 0), 0), 1) AS inventory_turnover_monthly,
+        ROUND(coalesce((t2.sum_avg_saldo/t2.sum_pemakaian) * total_days, 0), 1) as days_of_inventory_monthly
+    FROM Code_Summary t2
+),
+
+Max_Month AS (
+    SELECT
+        year,
+        plant,
+        business_unit,
+        MAX(month) AS bulan_akhir
+    FROM
+        Code_Summary
+    GROUP BY
+        year, plant, business_unit
+),
+
+Code_Inventory_YTD AS (
+    SELECT
+        cs.year,
+        cs.plant,
+        cs.business_unit,
+        SUM(cs.sum_saldo_awal)   AS saldo_awal_ytd,
+        SUM(cs.sum_penerimaan)  AS penerimaan_ytd,
+        SUM(cs.sum_pemakaian)   AS pemakaian_ytd,
+        SUM(cs.sum_saldo_akhir) AS saldo_akhir_ytd,
+        SUM(cs.sum_avg_saldo)   AS avg_saldo_ytd,
+        (
+    		(
+        		MAKE_DATE(cs.year, mm.bulan_akhir, 1)
+        		+ INTERVAL '1 month - 1 day'
+    		)::date
+    		- MAKE_DATE(cs.year, 1, 1)
+    		+ 1
+		) AS total_days_ytd
+    FROM Code_Summary cs
+    INNER JOIN Max_Month mm
+        ON cs.year = mm.year
+       AND cs.plant = mm.plant
+       AND cs.business_unit = mm.business_unit
+    WHERE cs.month <= mm.bulan_akhir
+    GROUP BY
+        cs.year,
+        cs.plant,
+        cs.business_unit,
+        mm.bulan_akhir
+),
+
+BU_YTD_Inventory_Turnover as (
+	select
+		t3.year,
+		t3.plant,
+		t3.business_unit,
+		ROUND(coalesce(t3.pemakaian_ytd / NULLIF(t3.avg_saldo_ytd, 0), 0), 1) AS inventory_turnover_ytd,
+        ROUND(coalesce((t3.avg_saldo_ytd/ NULLIF(t3.pemakaian_ytd, 0)) * t3.total_days_ytd, 0), 1) as days_of_inventory_ytd
+	from Code_Inventory_YTD t3
+),
+
+Final_Report AS (
+    SELECT
+        t4.plant,
+        t4.business_unit,
+        t4.year,
+        
+        SUM(CASE WHEN t4.month = 1 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Jan,
+        SUM(CASE WHEN t4.month = 2 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Feb,
+        SUM(CASE WHEN t4.month = 3 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Mar,
+        SUM(CASE WHEN t4.month = 4 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Apr,
+        SUM(CASE WHEN t4.month = 5 THEN t4.days_of_inventory_monthly ELSE NULL END) AS May,
+        SUM(CASE WHEN t4.month = 6 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Jun,
+        SUM(CASE WHEN t4.month = 7 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Jul,
+        SUM(CASE WHEN t4.month = 8 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Aug,
+        SUM(CASE WHEN t4.month = 9 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Sep,
+        SUM(CASE WHEN t4.month = 10 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Oct,
+        SUM(CASE WHEN t4.month = 11 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Nov,
+        SUM(CASE WHEN t4.month = 12 THEN t4.days_of_inventory_monthly ELSE NULL END) AS Dec
+        
+    FROM
+        BU_Monthly_Inventory_Turnover t4
+    GROUP BY
+        t4.plant, t4.business_unit, t4.year
+)
+
+SELECT
+    t5.*,
+    t6.days_of_inventory_ytd
+FROM
+    Final_Report t5
+INNER JOIN 
+    BU_YTD_Inventory_Turnover t6 ON t5.year = t6.year AND t5.plant = t6.plant AND t5.business_unit = t6.business_unit
+ORDER BY
+    t5.year, t5.plant, t5.business_unit
+);--> statement-breakpoint
 CREATE VIEW "public"."it_trend_analysis_monthly" AS (
 WITH Monthly_Metrics AS (
     SELECT
