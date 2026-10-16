@@ -326,7 +326,7 @@ BU_Monthly_Inventory_Turnover AS (
         t2.plant,
         t2.business_unit,
         ROUND(coalesce(t2.sum_pemakaian / NULLIF(t2.sum_avg_saldo, 0), 0), 1) AS inventory_turnover_monthly,
-        ROUND(coalesce((t2.sum_avg_saldo/t2.sum_pemakaian) * total_days, 0), 1) as days_of_inventory_monthly
+        ROUND(coalesce((t2.sum_avg_saldo/t2.sum_pemakaian) * total_days, 0), 2) as days_of_inventory_monthly
     FROM Code_Summary t2
 ),
 
@@ -373,14 +373,32 @@ Code_Inventory_YTD AS (
         mm.bulan_akhir
 ),
 
+AVG_Days_in_Year as (
+	select
+		t1.year,
+		t1.plant,
+		t1.business_unit,
+		round(avg(t1.total_days), 2) as avg_days_in_year
+	from Code_Summary t1
+	group by
+		t1.year,
+		t1.plant,
+		t1.business_unit
+),
+
 BU_YTD_Inventory_Turnover as (
 	select
 		t3.year,
 		t3.plant,
 		t3.business_unit,
+		t4.avg_days_in_year,
 		ROUND(coalesce(t3.pemakaian_ytd / NULLIF(t3.avg_saldo_ytd, 0), 0), 1) AS inventory_turnover_ytd,
-        ROUND(coalesce((t3.avg_saldo_ytd/ NULLIF(t3.pemakaian_ytd, 0)) * t3.total_days_ytd, 0), 1) as days_of_inventory_ytd
+        ROUND(coalesce((t3.avg_saldo_ytd/ NULLIF(t3.pemakaian_ytd, 0)) * t4.avg_days_in_year, 0), 2) as days_of_inventory_ytd
 	from Code_Inventory_YTD t3
+	left join AVG_Days_in_Year t4
+		on t3.year = t4.year
+		and t3.plant = t4.plant
+		and t3.business_unit = t4.business_unit
 ),
 
 Final_Report AS (
